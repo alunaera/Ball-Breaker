@@ -43,6 +43,7 @@
             this.gameField.Size = new System.Drawing.Size(583, 536);
             this.gameField.TabIndex = 0;
             this.gameField.TabStop = false;
+            this.gameField.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ClickMouse);
             // 
             // menuStrip
             // 

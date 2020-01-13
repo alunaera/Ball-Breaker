@@ -23,6 +23,17 @@ namespace Ball_Breaker
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias; 
             game.Draw(e.Graphics);
         }
+
+        private void ClickMouse(object sender, MouseEventArgs e)
+        {
+            int cellX = e.X / CellSize;
+            int cellY = e.Y / CellSize;
+
+            if (e.Button == MouseButtons.Left)
+                game.SelectArea(cellX, cellY);
+
+            gameField.Refresh();
+        }
     }
 
 }
