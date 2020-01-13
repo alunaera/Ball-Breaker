@@ -8,8 +8,9 @@ namespace Ball_Breaker
         private static readonly Random Random = new Random();
 
         public readonly Color BallColor;
-        public readonly int X;
-        public readonly int Y;
+
+        public int X;
+        public int Y;
 
         public bool hasBall;
 

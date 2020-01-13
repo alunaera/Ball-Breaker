@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Ball_Breaker
 {
@@ -10,11 +11,12 @@ namespace Ball_Breaker
         private const int FieldHeight = 12;
 
         private readonly int cellSize;
-        private readonly Font font = new Font("Arial", 15);
+        private readonly Font font = new Font("Arial", 10);
 
         private CellState[,] fieldCells;
         private List<CellState> selectedArea;
         private Color selectedAreaColor;
+        private int selectedAreaPointsCount;
 
         public event Action Defeat = delegate { };
         public event Action Victory = delegate { };
@@ -28,6 +30,7 @@ namespace Ball_Breaker
         {
             selectedArea = new List<CellState>();
             fieldCells = new CellState[FieldWidth, FieldHeight];
+            selectedAreaPointsCount = 0;
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
@@ -37,23 +40,30 @@ namespace Ball_Breaker
         public void SelectArea(int positionX, int positionY)
         {
             if (fieldCells[positionX, positionY].BallColor != selectedAreaColor)
+            {
+                selectedAreaPointsCount = 0;
                 selectedArea.Clear();
+            }
 
             if (!selectedArea.Contains(fieldCells[positionX, positionY]))
             {
                 selectedArea.Add(fieldCells[positionX, positionY]);
                 selectedAreaColor = fieldCells[positionX, positionY].BallColor;
                 AddCellSelectArea(positionX, positionY);
+
+                selectedAreaPointsCount = selectedArea.Count * (selectedArea.Count - 1);
             }
             else
             {
-                if (selectedArea.Count >= 2)
-                    foreach (var cell in selectedArea)
+                if (selectedArea.Count > 1)
+                    foreach (var cell in fieldCells)
                     {
-                        fieldCells[cell.X, cell.Y].hasBall = false;
+                        if (selectedArea.Contains(cell))
+                            cell.hasBall = false;
                     }
 
-                selectedArea.Clear();
+                selectedArea = new List<CellState>();
+                selectedAreaPointsCount = 0;
             }
         }
 
@@ -75,6 +85,7 @@ namespace Ball_Breaker
             DrawField(graphics);
             DrawSelectedArea(graphics);
             DrawFieldCells(graphics);
+            DrawPointsCount(graphics);
         }
 
         private void DrawField(Graphics graphics)
@@ -105,6 +116,25 @@ namespace Ball_Breaker
                         graphics.FillRectangle(Brushes.LightCoral, cell.X * cellSize, cell.Y * cellSize, cellSize,
                             cellSize);
                 }
+        }
+
+        private void DrawPointsCount(Graphics graphics)
+        {
+            if (selectedAreaPointsCount > 0)
+            {
+                var pointsCountPosition = selectedArea.OrderBy(cell => cell.Y).ThenBy(cell => cell.X).First();
+
+                pointsCountPosition.X = pointsCountPosition.X * cellSize - 15 >= 0
+                    ? pointsCountPosition.X * cellSize - 15
+                    : pointsCountPosition.X * cellSize;
+                pointsCountPosition.Y = pointsCountPosition.Y * cellSize - 15 >= 0
+                    ? pointsCountPosition.Y * cellSize - 15
+                    : pointsCountPosition.Y * cellSize;
+
+                graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
+                graphics.DrawString(selectedAreaPointsCount.ToString(), font, Brushes.Black,
+                    pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
+            }
         }
     }
 }
