@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace Ball_Breaker
 {
@@ -15,7 +16,6 @@ namespace Ball_Breaker
 
         private CellState[,] fieldCells;
         private List<CellState> selectedArea;
-        private Color selectedAreaColor;
         private int selectedAreaPointsCount;
 
         public event Action Defeat = delegate { };
@@ -39,31 +39,26 @@ namespace Ball_Breaker
 
         public void SelectArea(int positionX, int positionY)
         {
-            if (fieldCells[positionX, positionY].BallColor != selectedAreaColor)
+
+            if (selectedArea.Contains(fieldCells[positionX, positionY]) && selectedArea.Count > 1)
             {
-                selectedAreaPointsCount = 0;
+                foreach (var cell in fieldCells)
+                {
+                    if (selectedArea.Contains(cell))
+                        cell.hasBall = false;
+                }
+
                 selectedArea.Clear();
+                selectedAreaPointsCount = 0;
             }
 
             if (!selectedArea.Contains(fieldCells[positionX, positionY]))
             {
-                selectedArea.Add(fieldCells[positionX, positionY]);
-                selectedAreaColor = fieldCells[positionX, positionY].BallColor;
-                AddCellSelectArea(positionX, positionY);
-
-                selectedAreaPointsCount = selectedArea.Count * (selectedArea.Count - 1);
-            }
-            else
-            {
-                if (selectedArea.Count > 1)
-                    foreach (var cell in fieldCells)
-                    {
-                        if (selectedArea.Contains(cell))
-                            cell.hasBall = false;
-                    }
-
-                selectedArea = new List<CellState>();
                 selectedAreaPointsCount = 0;
+                selectedArea.Clear();
+
+                selectedArea.Add(fieldCells[positionX, positionY]);
+                AddCellSelectArea(positionX, positionY);
             }
         }
 
@@ -76,7 +71,12 @@ namespace Ball_Breaker
                         Math.Abs(i) == Math.Abs(j) || selectedArea.Contains(fieldCells[x + i, y + j])) continue;
 
                     if (fieldCells[x, y].BallColor == fieldCells[x + i, y + j].BallColor)
-                        SelectArea(x + i, y + j);
+                    {
+                        selectedArea.Add(fieldCells[x + i, y + j]);
+                        AddCellSelectArea(x + i, y + j);
+
+                        selectedAreaPointsCount = selectedArea.Count * (selectedArea.Count - 1);
+                    }
                 }
         }
 
@@ -109,7 +109,7 @@ namespace Ball_Breaker
 
         private void DrawSelectedArea(Graphics graphics)
         {
-            if (selectedArea.Count >= 2)
+            if (selectedArea.Count > 1)
                 foreach (var cell in selectedArea)
                 {
                     if (cell.hasBall)

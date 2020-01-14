@@ -30,9 +30,10 @@ namespace Ball_Breaker
             int cellY = e.Y / CellSize;
 
             if (e.Button == MouseButtons.Left)
+            {
                 game.SelectArea(cellX, cellY);
-
-            gameField.Refresh();
+                gameField.Refresh();
+            }
         }
     }
 
