@@ -9,17 +9,12 @@ namespace Ball_Breaker
 
         public readonly Color BallColor;
 
-        public int X;
-        public int Y;
+        public bool HasBall;
 
-        public bool hasBall;
-
-        public CellState(int x, int y)
+        public CellState()
         {
-            X = x;
-            Y = y;
             BallColor = GetRandomColor();
-            hasBall = true;
+            HasBall = true;
         }
 
         private Color GetRandomColor()
@@ -41,7 +36,7 @@ namespace Ball_Breaker
             int positionY = cellY * cellSize;
             int offsetToCenter = cellSize / 7;
 
-            if (hasBall)
+            if (HasBall)
                 graphics.FillEllipse(GetBrush(), positionX + offsetToCenter, positionY + offsetToCenter, 27, 27);
         }
 

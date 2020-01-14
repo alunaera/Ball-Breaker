@@ -34,31 +34,39 @@ namespace Ball_Breaker
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    fieldCells[x, y] = new CellState(x, y);
+                    fieldCells[x, y] = new CellState();
         }
 
         public void SelectArea(int positionX, int positionY)
         {
-
-            if (selectedArea.Contains(fieldCells[positionX, positionY]) && selectedArea.Count > 1)
+            if (fieldCells[positionX, positionY].HasBall)
             {
-                foreach (var cell in fieldCells)
+                if (selectedArea.Contains(fieldCells[positionX, positionY]) && selectedArea.Count > 1)
                 {
-                    if (selectedArea.Contains(cell))
-                        cell.hasBall = false;
+                    foreach (var cell in fieldCells)
+                    {
+                        if (selectedArea.Contains(cell))
+                            cell.HasBall = false;
+                    }
+                    ShiftFieldCells();
+
+                    selectedArea.Clear();
+                    selectedAreaPointsCount = 0;
                 }
 
-                selectedArea.Clear();
-                selectedAreaPointsCount = 0;
+                if (!selectedArea.Contains(fieldCells[positionX, positionY]))
+                {
+                    selectedAreaPointsCount = 0;
+                    selectedArea.Clear();
+
+                    selectedArea.Add(fieldCells[positionX, positionY]);
+                    AddCellSelectArea(positionX, positionY);
+                }
             }
-
-            if (!selectedArea.Contains(fieldCells[positionX, positionY]))
+            else
             {
-                selectedAreaPointsCount = 0;
                 selectedArea.Clear();
-
-                selectedArea.Add(fieldCells[positionX, positionY]);
-                AddCellSelectArea(positionX, positionY);
+                selectedAreaPointsCount = 0;
             }
         }
 
@@ -80,12 +88,48 @@ namespace Ball_Breaker
                 }
         }
 
+        private void ShiftFieldCells()
+        {
+            for (int j = 0; j < fieldCells.GetLength(1); j++)
+            {
+                int cellWithOutBallPosition = GetCellWithOutBallPosition(j);
+                if (cellWithOutBallPosition < 0) 
+                    continue;
+                for (int i = fieldCells.GetLength(0) - 1; i > 0;)
+                {
+                    if (!fieldCells[i, j].HasBall)
+                    {
+                        i--;
+                    }
+                    else
+                    {
+                        (fieldCells[i, j], fieldCells[cellWithOutBallPosition, j]) = (
+                            fieldCells[cellWithOutBallPosition, j], fieldCells[i, j]);
+
+                        cellWithOutBallPosition--;
+                        if (cellWithOutBallPosition < 0)
+                            i = 0;
+                    }
+                }
+            }
+        }
+
+        private int GetCellWithOutBallPosition(int rowNumber)
+        {
+            int position = -1;
+            for (int i = 0; i < fieldCells.GetLength(0); i++)
+            {
+                if (fieldCells[i, rowNumber].HasBall)
+                    position = i;
+            }
+
+            return position;
+        }
+
         public void Draw(Graphics graphics)
         {
             DrawField(graphics);
-            DrawSelectedArea(graphics);
             DrawFieldCells(graphics);
-            DrawPointsCount(graphics);
         }
 
         private void DrawField(Graphics graphics)
@@ -107,34 +151,34 @@ namespace Ball_Breaker
                     fieldCells[x, y].Draw(graphics, x, y, cellSize);
         }
 
-        private void DrawSelectedArea(Graphics graphics)
-        {
-            if (selectedArea.Count > 1)
-                foreach (var cell in selectedArea)
-                {
-                    if (cell.hasBall)
-                        graphics.FillRectangle(Brushes.LightCoral, cell.X * cellSize, cell.Y * cellSize, cellSize,
-                            cellSize);
-                }
-        }
+        //private void DrawSelectedArea(Graphics graphics)
+        //{
+        //    if (selectedArea.Count > 1)
+        //        foreach (var cell in selectedArea)
+        //        {
+        //            if (cell.hasBall)
+        //                graphics.FillRectangle(Brushes.LightCoral, cell.X * cellSize, cell.Y * cellSize, cellSize,
+        //                    cellSize);
+        //        }
+        //}
 
-        private void DrawPointsCount(Graphics graphics)
-        {
-            if (selectedAreaPointsCount > 0)
-            {
-                var pointsCountPosition = selectedArea.OrderBy(cell => cell.Y).ThenBy(cell => cell.X).First();
+        //private void DrawPointsCount(Graphics graphics)
+        //{
+        //    if (selectedAreaPointsCount > 0)
+        //    {
+        //        var pointsCountPosition = selectedArea.OrderBy(cell => cell.Y).ThenBy(cell => cell.X).First();
 
-                pointsCountPosition.X = pointsCountPosition.X * cellSize - 15 >= 0
-                    ? pointsCountPosition.X * cellSize - 15
-                    : pointsCountPosition.X * cellSize;
-                pointsCountPosition.Y = pointsCountPosition.Y * cellSize - 15 >= 0
-                    ? pointsCountPosition.Y * cellSize - 15
-                    : pointsCountPosition.Y * cellSize;
+        //        pointsCountPosition.X = pointsCountPosition.X * cellSize - 15 >= 0
+        //            ? pointsCountPosition.X * cellSize - 15
+        //            : pointsCountPosition.X * cellSize;
+        //        pointsCountPosition.Y = pointsCountPosition.Y * cellSize - 15 >= 0
+        //            ? pointsCountPosition.Y * cellSize - 15
+        //            : pointsCountPosition.Y * cellSize;
 
-                graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
-                graphics.DrawString(selectedAreaPointsCount.ToString(), font, Brushes.Black,
-                    pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
-            }
-        }
+        //        graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
+        //        graphics.DrawString(selectedAreaPointsCount.ToString(), font, Brushes.Black,
+        //            pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
+        //    }
+        //}
     }
 }
