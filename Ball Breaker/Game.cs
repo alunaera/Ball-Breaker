@@ -90,28 +90,6 @@ namespace Ball_Breaker
 
         private void ShiftFieldCells()
         {
-            for(int j = 0; j < fieldCells.GetLength(1); j++)
-            {
-                int cellWithOutBallPosition = GetCellWithOutBallPositionInRow(j);
-                if (cellWithOutBallPosition >= 0)
-                    for (int i = fieldCells.GetLength(0) - 1; i > 0;)
-                    {
-                        if (fieldCells[i, j].HasBall)
-                        {
-                            i--;
-                        }
-                        else
-                        {
-                            (fieldCells[i, j], fieldCells[cellWithOutBallPosition, j]) = (
-                                fieldCells[cellWithOutBallPosition, j], fieldCells[i, j]);
-
-                            cellWithOutBallPosition--;
-                            if (cellWithOutBallPosition < 0)
-                                i = 0;
-                        }
-                    }
-            }
-
             for (int i = 0; i < fieldCells.GetLength(0); i++)
             {
                 int cellWithOutBallPosition = GetCellWithOutBallPositionInColumn(i);
@@ -133,18 +111,28 @@ namespace Ball_Breaker
                         }
                     }
             }
-        }
 
-        private int GetCellWithOutBallPositionInRow(int rowNumber)
-        {
-            int position = -1;
-            for (int i = 0; i < fieldCells.GetLength(0); i++)
+            for (int j = 0; j < fieldCells.GetLength(1); j++)
             {
-                if (!fieldCells[i, rowNumber].HasBall)
-                    position = i;
-            }
+                int cellWithOutBallPosition = GetCellWithOutBallPositionInRow(j);
+                if (cellWithOutBallPosition >= 0)
+                    for (int i = fieldCells.GetLength(0) - 1; i > 0;)
+                    {
+                        if (fieldCells[i, j].HasBall)
+                        {
+                            i--;
+                        }
+                        else
+                        {
+                            (fieldCells[i, j], fieldCells[cellWithOutBallPosition, j]) = (
+                                fieldCells[cellWithOutBallPosition, j], fieldCells[i, j]);
 
-            return position;
+                            cellWithOutBallPosition--;
+                            if (cellWithOutBallPosition < 0)
+                                i = 0;
+                        }
+                    }
+            }
         }
 
         private int GetCellWithOutBallPositionInColumn(int columnNumber)
@@ -154,6 +142,18 @@ namespace Ball_Breaker
             {
                 if (!fieldCells[columnNumber, j].HasBall)
                     position = j;
+            }
+
+            return position;
+        }
+
+        private int GetCellWithOutBallPositionInRow(int rowNumber)
+        {
+            int position = -1;
+            for (int i = 0; i < fieldCells.GetLength(0); i++)
+            {
+                if (!fieldCells[i, rowNumber].HasBall)
+                    position = i;
             }
 
             return position;
