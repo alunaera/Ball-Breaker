@@ -42,7 +42,7 @@
             // 
             this.gameField.Location = new System.Drawing.Point(12, 42);
             this.gameField.Name = "gameField";
-            this.gameField.Size = new System.Drawing.Size(583, 536);
+            this.gameField.Size = new System.Drawing.Size(583, 571);
             this.gameField.TabIndex = 0;
             this.gameField.TabStop = false;
             this.gameField.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ClickMouse);
@@ -71,6 +71,7 @@
             this.undoToolStripMenuItem.Name = "undoToolStripMenuItem";
             this.undoToolStripMenuItem.Size = new System.Drawing.Size(59, 24);
             this.undoToolStripMenuItem.Text = "Undo";
+            this.undoToolStripMenuItem.Click += new System.EventHandler(this.ClickUndo);
             // 
             // Timer
             // 
@@ -82,7 +83,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(605, 590);
+            this.ClientSize = new System.Drawing.Size(605, 625);
             this.Controls.Add(this.gameField);
             this.Controls.Add(this.menuStrip);
             this.DoubleBuffered = true;

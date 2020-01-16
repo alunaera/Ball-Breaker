@@ -3,13 +3,14 @@ using System.Drawing;
 
 namespace Ball_Breaker
 {
-    class CellState
+    internal class CellState
     {
-        private static readonly Random Random = new Random();
+        public static readonly Random Random = new Random();
 
         public readonly Color BallColor;
 
-        public bool HasBall;
+        public bool HasBall { get; private set; }
+        public int SimilarBallsAroundCount;
 
         public CellState()
         {
@@ -28,6 +29,16 @@ namespace Ball_Breaker
                 case 4: return Color.BlueViolet;
                 default: throw new ArgumentOutOfRangeException();
             }
+        }
+
+        public void SetHasBallTrue()
+        {
+            HasBall = true;
+        }
+
+        public void SetHasBallFalse()
+        {
+            HasBall = false;
         }
 
         public void Draw(Graphics graphics, int cellX, int cellY, int cellSize)

@@ -15,7 +15,15 @@ namespace Ball_Breaker
 
             gameField.Paint += Draw;
 
-            game.NewGame();
+            game.Defeat += () =>
+            {
+                gameField.Refresh();
+                Timer.Enabled = false;
+                MessageBox.Show("Game over");
+                game.StartNewGame();
+            };
+
+            game.StartNewGame();
         }
 
         private void Draw(object sender, PaintEventArgs e)
@@ -30,7 +38,7 @@ namespace Ball_Breaker
             int cellY = e.Y / CellSize;
 
             if (e.Button == MouseButtons.Left)
-                game.PressOnGameField(cellX, cellY);
+                game.ChooseCell(cellX, cellY);
         }
 
         private void TickTimer(object sender, System.EventArgs e)
@@ -41,7 +49,12 @@ namespace Ball_Breaker
 
         private void ClickNewGame(object sender, System.EventArgs e)
         {
-            game.NewGame();
+            game.StartNewGame();
+        }
+
+        private void ClickUndo(object sender, System.EventArgs e)
+        {
+            game.UndoDeleteSelectedArea();
         }
     }
 

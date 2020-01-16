@@ -1,6 +1,6 @@
 ﻿namespace Ball_Breaker
 {
-    enum GamePhase
+    internal enum GamePhase
     {
         ChooseSelectedArea,
         ConfirmSelectedArea,

@@ -1,166 +1,71 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Ball_Breaker
 {
-    class Game
+    internal class Game
     {
         private const int FieldWidth = 12;
         private const int FieldHeight = 12;
 
+        private readonly Font pointCountFont = new Font("Arial", 10);
+        private readonly Font scoreFont = new Font("Arial", 15);
         private readonly int cellSize;
-        private readonly Font font = new Font("Arial", 10);
 
         private GamePhase gamePhase;
-        private CellState[,] fieldCells;
+        private ShiftDirection shiftDirection;
+        private CellState[,] gameField;
+        private CellState[,] gameFieldsOnLastTurn;
         private List<CellState> selectedArea;
+        private List<CellState> deletedSelectedArea;
         private int selectedAreaPointsCount;
         private int delayOfShift;
+        private int score;
 
         public event Action Defeat = delegate { };
-        public event Action Victory = delegate { };
 
         public Game(int cellSize)
         {
             this.cellSize = cellSize;
         }
 
-        public void NewGame()
+        public void StartNewGame()
         {
+            gameField = new CellState[FieldWidth, FieldHeight];
+            gameFieldsOnLastTurn = new CellState[FieldWidth, FieldHeight];
             selectedArea = new List<CellState>();
-            fieldCells = new CellState[FieldWidth, FieldHeight];
+            deletedSelectedArea = new List<CellState>();
+
             selectedAreaPointsCount = 0;
             delayOfShift = 0;
+            score = 0;
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    fieldCells[x, y] = new CellState();
+                    gameField[x, y] = new CellState();
         }
 
-        public void Update()
+        public void ChooseCell(int positionX, int positionY)
         {
-            switch (gamePhase)
+            if (positionX < 0 || positionX >= FieldWidth || positionY < 0 || positionY >= FieldHeight) 
+                return;
+
+            if (gameField[positionX, positionY].HasBall)
             {
-                case GamePhase.ShiftDownFieldCell:
-                    if (delayOfShift < 15)
-                    {
-                        delayOfShift++;
-                        ShiftDownFieldCells();
-                    }
-                    else
-                    {
-                        gamePhase = GamePhase.ShiftRightFieldCells;
-                        delayOfShift = 0;
-                    }
-                    break;
-                case GamePhase.ShiftRightFieldCells:
-                    ShiftRightFieldCellS();
-                    gamePhase = GamePhase.ChooseSelectedArea;
-                    break;
-            }
-        }
-
-        private void ShiftDownFieldCells()
-        {
-            for (int i = 0; i < fieldCells.GetLength(0); i++)
-            {
-                int cellWithOutBallPosition = GetCellWithOutBallPositionInColumn(i);
-
-                if (cellWithOutBallPosition >= 0)
-                    for (int j = fieldCells.GetLength(1) - 1; j > 0;)
-                    {
-                        if (fieldCells[i, j].HasBall)
-                        {
-                            j--;
-                        }
-                        else
-                        {
-                            (fieldCells[i, j], fieldCells[i, cellWithOutBallPosition]) = (
-                                fieldCells[i, cellWithOutBallPosition], fieldCells[i, j]);
-
-                            cellWithOutBallPosition--;
-                            if (cellWithOutBallPosition < 0)
-                                j = 0;
-                        }
-                    }
-            }
-        }
-
-        private void ShiftRightFieldCellS()
-        {
-            for (int j = 0; j < fieldCells.GetLength(1); j++)
-            {
-                int cellWithOutBallPosition = GetCellWithOutBallPositionInRow(j);
-
-                if (cellWithOutBallPosition >= 0)
-                    for (int i = fieldCells.GetLength(0) - 1; i > 0;)
-                    {
-                        if (fieldCells[i, j].HasBall)
-                        {
-                            i--;
-                        }
-                        else
-                        {
-                            (fieldCells[i, j], fieldCells[cellWithOutBallPosition, j]) = (
-                                fieldCells[cellWithOutBallPosition, j], fieldCells[i, j]);
-
-                            cellWithOutBallPosition--;
-                            if (cellWithOutBallPosition < 0)
-                                i = 0;
-                        }
-                    }
-            }
-        }
-
-        private int GetCellWithOutBallPositionInColumn(int columnNumber)
-        {
-            int position = -1;
-            for (int j = 0; j < fieldCells.GetLength(0); j++)
-            {
-                if (!fieldCells[columnNumber, j].HasBall)
-                    position = j;
-            }
-
-            return position;
-        }
-
-        private int GetCellWithOutBallPositionInRow(int rowNumber)
-        {
-            int position = -1;
-            for (int i = 0; i < fieldCells.GetLength(0); i++)
-            {
-                if (!fieldCells[i, rowNumber].HasBall)
-                    position = i;
-            }
-
-            return position;
-        }
-
-        public void PressOnGameField(int positionX, int positionY)
-        {
-            if (fieldCells[positionX, positionY].HasBall)
-            {
-                if (selectedArea.Contains(fieldCells[positionX, positionY]) && selectedArea.Count > 1)
+                if (selectedArea.Contains(gameField[positionX, positionY]) && selectedArea.Count > 1)
                 {
-                    foreach (var cell in fieldCells)
-                    {
-                        if (selectedArea.Contains(cell))
-                            cell.HasBall = false;
-                    }
-
-                    selectedArea.Clear();
-                    selectedAreaPointsCount = 0;
-
+                    DeleteSelectedArea();
                     gamePhase = GamePhase.ShiftDownFieldCell;
                 }
 
-                if (!selectedArea.Contains(fieldCells[positionX, positionY]) && gamePhase != GamePhase.ShiftDownFieldCell)
+                else if (gamePhase != GamePhase.ShiftDownFieldCell)
                 {
                     selectedAreaPointsCount = 0;
                     selectedArea.Clear();
 
-                    selectedArea.Add(fieldCells[positionX, positionY]);
+                    selectedArea.Add(gameField[positionX, positionY]);
                     AddCellToSelectArea(positionX, positionY);
 
                     gamePhase = GamePhase.ConfirmSelectedArea;
@@ -169,10 +74,24 @@ namespace Ball_Breaker
             else
             {
                 selectedArea.Clear();
-                selectedAreaPointsCount = 0;
-
                 gamePhase = GamePhase.ChooseSelectedArea;
             }
+        }
+
+        private void DeleteSelectedArea()
+        {
+            Array.Copy(gameField, gameFieldsOnLastTurn, gameField.Length);
+            deletedSelectedArea.Clear();
+
+            foreach (var cell in gameField)
+                if (selectedArea.Contains(cell))
+                {
+                    deletedSelectedArea.Add(cell);
+                    cell.SetHasBallFalse();
+                }
+
+            selectedArea.Clear();
+            score += selectedAreaPointsCount;
         }
 
         private void AddCellToSelectArea(int x, int y)
@@ -181,17 +100,203 @@ namespace Ball_Breaker
                 for (int j = -1; j <= 1; j++)
                 {
                     if (x + i < 0 || x + i >= FieldWidth || y + j < 0 || y + j >= FieldHeight ||
-                        Math.Abs(i) == Math.Abs(j) || selectedArea.Contains(fieldCells[x + i, y + j]))
+                        Math.Abs(i) == Math.Abs(j) || selectedArea.Contains(gameField[x + i, y + j]))
                         continue;
 
-                    if (fieldCells[x, y].BallColor == fieldCells[x + i, y + j].BallColor)
+                    if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor && gameField[x + i, y + j].HasBall)
                     {
-                        selectedArea.Add(fieldCells[x + i, y + j]);
+                        selectedArea.Add(gameField[x + i, y + j]);
                         AddCellToSelectArea(x + i, y + j);
 
                         selectedAreaPointsCount = selectedArea.Count * (selectedArea.Count - 1);
                     }
                 }
+        }
+
+        public void Update()
+        {
+            CheckFirstColumn();
+            CheckDefeat();
+
+            switch (gamePhase)
+            {
+                case GamePhase.ShiftDownFieldCell:
+                    ShiftGameField();
+
+                    if (delayOfShift < 15)
+                        delayOfShift++;
+                    else
+                    {
+                        gamePhase = GamePhase.ShiftRightFieldCells;
+                        shiftDirection = ShiftDirection.Right;
+                        delayOfShift = 0;
+                    }
+
+                    break;
+                case GamePhase.ShiftRightFieldCells:
+                    ShiftGameField();
+
+                    gamePhase = GamePhase.ChooseSelectedArea;
+                    shiftDirection = ShiftDirection.Down;
+                    break;
+            }
+        }
+
+        private void CheckDefeat()
+        {
+            CalculateSimilarBallsAroundCell();
+
+            int potentialSelectedAreaCount = gameField.Cast<CellState>()
+                                                       .Count(cell => cell.SimilarBallsAroundCount > 0);
+
+            if (potentialSelectedAreaCount == 0)
+                Defeat();
+        }
+
+        private void CalculateSimilarBallsAroundCell()
+        {
+            for (int x = 0; x < FieldWidth; x++)
+                for (int y = 0; y < FieldHeight; y++)
+                {
+                    gameField[x, y].SimilarBallsAroundCount = 0;
+
+                    for (int i = -1; i <= 1; i++)
+                    {
+                        if (i == 0)
+                            continue;
+
+                        if (x + i >= 0 && x + i < FieldWidth &&
+                            gameField[x + i, y].HasBall && gameField[x, y].BallColor == gameField[x + i, y].BallColor)
+                            gameField[x, y].SimilarBallsAroundCount++;
+
+                        if (y + i >= 0 && y + i < FieldHeight &&
+                            gameField[x, y + i].HasBall && gameField[x, y].BallColor == gameField[x, y + i].BallColor)
+                            gameField[x, y].SimilarBallsAroundCount++;
+                    }
+                }
+        }
+
+        private void ShiftGameField()
+        {
+            switch (shiftDirection)
+            {
+                case ShiftDirection.Down:
+                    ShiftDownGameField();
+                    break;
+                case ShiftDirection.Right:
+                    ShiftRightGameField();
+                    break;
+            }
+        }
+
+        private void ShiftDownGameField()
+        {
+            for (int x = 0; x < FieldWidth; x++)
+            {
+                int cellWithOutBallPosition = GetCellWithOutBallPosition(x);
+
+                if (cellWithOutBallPosition >= 0)
+                    for (int y = FieldHeight - 1; y > 0;)
+                    {
+                        if (gameField[x, y].HasBall)
+                        {
+                            y--;
+                        }
+                        else
+                        {
+                            (gameField[x, y], gameField[x, cellWithOutBallPosition]) = (
+                                gameField[x, cellWithOutBallPosition], gameField[x, y]);
+
+                            cellWithOutBallPosition--;
+                            if (cellWithOutBallPosition < 0)
+                                y = 0;
+                        }
+                    }
+            }
+        }
+        
+        private void ShiftRightGameField()
+        {
+            for (int y = 0; y < gameField.GetLength(1); y++)
+            {
+                int cellWithOutBallPosition = GetCellWithOutBallPosition(y);
+
+                if (cellWithOutBallPosition >= 0)
+                    for (int x = FieldWidth - 1; x > 0;)
+                    {
+                        if (gameField[x, y].HasBall)
+                        {
+                            x--;
+                        }
+                        else
+                        {
+                            (gameField[x, y], gameField[cellWithOutBallPosition, y]) = (
+                                gameField[cellWithOutBallPosition, y], gameField[x, y]);
+
+                            cellWithOutBallPosition--;
+                            if (cellWithOutBallPosition < 0)
+                                x = 0;
+                        }
+                    }
+            }
+        }
+
+        private int GetCellWithOutBallPosition(int numberPartOfArray)
+        {
+            int position = -1;
+
+            switch (shiftDirection)
+            {
+                case ShiftDirection.Down:
+
+                    for (int y = 0; y < FieldWidth; y++)
+                        if (!gameField[numberPartOfArray, y].HasBall)
+                            position = y;
+
+                    break;
+                case ShiftDirection.Right:
+
+                    for (int x = 0; x < FieldHeight; x++)
+                        if (!gameField[x, numberPartOfArray].HasBall)
+                            position = x;
+
+                    break;
+            }
+
+            return position;
+        }
+
+        private void CheckFirstColumn()
+        {
+            int cellWithBallsCount = 0;
+
+            for (int y = 0; y < FieldHeight; y++)
+                if (gameField[0, y].HasBall)
+                    cellWithBallsCount++;
+
+            if(cellWithBallsCount == 0)
+                AddBallToLeftColumn();
+        }
+
+        private void AddBallToLeftColumn()
+        {
+            int ballsCount = CellState.Random.Next(1, FieldHeight);
+
+            for (int y = ballsCount; y >= 0; y--)
+                gameField[0, FieldHeight - y - 1] = new CellState();
+
+            gamePhase = GamePhase.ShiftDownFieldCell;
+        }
+
+        public void UndoDeleteSelectedArea()
+        {
+            Array.Copy(gameFieldsOnLastTurn, gameField, gameField.Length);
+
+            foreach (var cell in gameField)
+            {
+                if(deletedSelectedArea.Contains(cell))
+                    cell.SetHasBallTrue();
+            }
         }
 
         public void Draw(Graphics graphics)
@@ -200,6 +305,7 @@ namespace Ball_Breaker
             DrawSelectedArea(graphics);
             DrawFieldCells(graphics);
             DrawPointsCount(graphics);
+            DrawScore(graphics);
         }
 
         private void DrawField(Graphics graphics)
@@ -214,25 +320,21 @@ namespace Ball_Breaker
                 }
         }
 
+        private void DrawSelectedArea(Graphics graphics)
+        {
+            if (selectedArea.Count > 1)
+                for (int x = 0; x < FieldWidth; x++)
+                    for (int y = 0; y < FieldHeight; y++)
+                        if (selectedArea.Contains(gameField[x, y]) && gameField[x, y].HasBall)
+                            graphics.FillRectangle(Brushes.LightCoral, x * cellSize, y * cellSize,
+                                cellSize, cellSize);
+        }
+
         private void DrawFieldCells(Graphics graphics)
         {
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    fieldCells[x, y].Draw(graphics, x, y, cellSize);
-        }
-
-        private void DrawSelectedArea(Graphics graphics)
-        {
-            if (selectedArea.Count > 1)
-                for (int i = 0; i < fieldCells.GetLength(0); i++)
-                {
-                    for (int j = 0; j < fieldCells.GetLength(1); j++)
-                    {
-                        if(selectedArea.Contains(fieldCells[i,j]) && fieldCells[i,j].HasBall)
-                            graphics.FillRectangle(Brushes.LightCoral, i * cellSize, j * cellSize, cellSize,
-                                cellSize);
-                    }
-                }
+                    gameField[x, y].Draw(graphics, x, y, cellSize);
         }
 
         private void DrawPointsCount(Graphics graphics)
@@ -240,22 +342,18 @@ namespace Ball_Breaker
             int positionX = 0;
             int positionY = 0;
 
-            for (int j = 0; j < fieldCells.GetLength(1); j++)
-
-            {
-                for (int i = 0; i < fieldCells.GetLength(0); i++)
+            for (int y = 0; y < FieldHeight; y++)
+                for (int x = 0; x < FieldWidth; x++)
                 {
-                    if (!selectedArea.Contains(fieldCells[i, j]) || !fieldCells[i, j].HasBall)
+                    if (!selectedArea.Contains(gameField[x, y]) || !gameField[x, y].HasBall)
                         continue;
 
-                    positionX = i * cellSize;
-                    positionY = j * cellSize;
+                    positionX = x * cellSize;
+                    positionY = y * cellSize;
 
-                    i = fieldCells.GetLength(0);
-                    j = fieldCells.GetLength(1);
-
+                    x = FieldWidth;
+                    y = FieldHeight;
                 }
-            }
 
             positionX = positionX - 15 >= 0
                 ? positionX - 15
@@ -267,9 +365,14 @@ namespace Ball_Breaker
             if (selectedAreaPointsCount > 0 && gamePhase == GamePhase.ConfirmSelectedArea)
             {
                 graphics.FillEllipse(Brushes.LightGreen, positionX, positionY, 30, 25);
-                graphics.DrawString(selectedAreaPointsCount.ToString(), font, Brushes.Black,
+                graphics.DrawString(selectedAreaPointsCount.ToString(), pointCountFont, Brushes.Black,
                     positionX + 5, positionY + 5);
             }
+        }
+
+        private void DrawScore(Graphics graphics)
+        {
+            graphics.DrawString("Score: " + score, scoreFont, Brushes.Black, 0, 440);
         }
     }
 }
