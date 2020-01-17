@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace Ball_Breaker
@@ -8,13 +9,14 @@ namespace Ball_Breaker
         public static readonly Random Random = new Random();
 
         public readonly Color BallColor;
+        public readonly List<SimilarBallDirection> SimilarBallList;
 
         public bool HasBall { get; private set; }
-        public int SimilarBallsAroundCount;
 
         public CellState()
         {
             BallColor = GetRandomColor();
+            SimilarBallList = new List<SimilarBallDirection>();
             HasBall = true;
         }
 
