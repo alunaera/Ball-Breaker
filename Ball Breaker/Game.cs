@@ -24,6 +24,7 @@ namespace Ball_Breaker
         private int selectedAreaPointsCount;
         private int delayOfShift;
         private int score;
+        private bool isUndoLastTurn;
 
         public event Action Defeat = delegate { };
 
@@ -42,6 +43,7 @@ namespace Ball_Breaker
             selectedAreaPointsCount = 0;
             delayOfShift = 0;
             score = 0;
+            isUndoLastTurn = false;
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
@@ -136,8 +138,10 @@ namespace Ball_Breaker
                     break;
                 case GamePhase.ShiftRightFieldCells:
                     ShiftGameField();
+
                     gamePhase = GamePhase.ChooseSelectedArea;
                     shiftDirection = ShiftDirection.Down;
+                    isUndoLastTurn = false;
                     break;
             }
         }
@@ -305,6 +309,13 @@ namespace Ball_Breaker
                 if(deletedSelectedArea.Contains(cell))
                     cell.SetHasBallTrue();
             }
+
+            isUndoLastTurn = true;
+        }
+
+        public bool IsUndoLastTurn()
+        {
+            return isUndoLastTurn;
         }
 
         public void Draw(Graphics graphics)

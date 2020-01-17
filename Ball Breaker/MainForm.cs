@@ -45,6 +45,7 @@ namespace Ball_Breaker
         {
             game.Update();
             gameField.Refresh();
+            undoToolStripMenuItem.Enabled = !game.IsUndoLastTurn();
         }
 
         private void ClickNewGame(object sender, System.EventArgs e)
