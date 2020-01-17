@@ -6,18 +6,29 @@ namespace Ball_Breaker
 {
     internal class CellState
     {
+        private Brush brush;
+
         public static readonly Random Random = new Random();
 
         public readonly Color BallColor;
-        public readonly List<SimilarBallDirection> SimilarBallList;
+        public readonly List<Direction> SimilarBallList;
 
-        public bool HasBall { get; private set; }
+        public bool HasBall { get; set; }
 
         public CellState()
         {
             BallColor = GetRandomColor();
-            SimilarBallList = new List<SimilarBallDirection>();
+            brush = new SolidBrush(BallColor);
+            SimilarBallList = new List<Direction>();
             HasBall = true;
+        }
+
+        public CellState(Color ballColor, bool hasBall)
+        {
+            BallColor = ballColor;
+            brush = new SolidBrush(BallColor);
+            SimilarBallList = new List<Direction>();
+            HasBall = hasBall;
         }
 
         private Color GetRandomColor()
@@ -33,16 +44,6 @@ namespace Ball_Breaker
             }
         }
 
-        public void SetHasBallTrue()
-        {
-            HasBall = true;
-        }
-
-        public void SetHasBallFalse()
-        {
-            HasBall = false;
-        }
-
         public void Draw(Graphics graphics, int cellX, int cellY, int cellSize)
         {
             int positionX = cellX * cellSize;
@@ -50,27 +51,7 @@ namespace Ball_Breaker
             int offsetToCenter = cellSize / 7;
 
             if (HasBall)
-                graphics.FillEllipse(GetBrush(), positionX + offsetToCenter, positionY + offsetToCenter, 27, 27);
-        }
-
-        private Brush GetBrush()
-        {
-            if (BallColor == Color.Green)
-                return Brushes.Green;
-
-            if (BallColor == Color.Blue)
-                return Brushes.Blue;
-
-            if (BallColor == Color.Red)
-                return Brushes.Red;
-
-            if (BallColor == Color.Khaki)
-                return Brushes.Khaki;
-
-            if (BallColor == Color.BlueViolet)
-                return Brushes.BlueViolet;
-
-            throw new ArgumentOutOfRangeException();
+                graphics.FillEllipse(brush, positionX + offsetToCenter, positionY + offsetToCenter, 27, 27);
         }
     }
 }

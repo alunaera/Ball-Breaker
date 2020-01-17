@@ -20,11 +20,10 @@ namespace Ball_Breaker
         private CellState[,] gameField;
         private CellState[,] gameFieldsOnLastTurn;
         private List<CellState> selectedArea;
-        private List<CellState> deletedSelectedArea;
         private int selectedAreaPointsCount;
         private int delayOfShift;
         private int score;
-        private bool isUndoLastTurn;
+        private bool canUndoLastTurn;
 
         public event Action Defeat = delegate { };
 
@@ -38,21 +37,25 @@ namespace Ball_Breaker
             gameField = new CellState[FieldWidth, FieldHeight];
             gameFieldsOnLastTurn = new CellState[FieldWidth, FieldHeight];
             selectedArea = new List<CellState>();
-            deletedSelectedArea = new List<CellState>();
 
             selectedAreaPointsCount = 0;
             delayOfShift = 0;
             score = 0;
-            isUndoLastTurn = false;
+            canUndoLastTurn = true;
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
                     gameField[x, y] = new CellState();
+
+            CalculateSimilarBallsAroundCell();
         }
 
         public void ChooseCell(int positionX, int positionY)
         {
-            if (positionX < 0 || positionX >= FieldWidth || positionY < 0 || positionY >= FieldHeight) 
+            if (positionX < 0 || positionX >= FieldWidth ||
+                positionY < 0 || positionY >= FieldHeight ||
+                gamePhase == GamePhase.ShiftDownFieldCell ||
+                gamePhase == GamePhase.ShiftRightFieldCells) 
                 return;
 
             if (gameField[positionX, positionY].HasBall)
@@ -83,18 +86,16 @@ namespace Ball_Breaker
 
         private void DeleteSelectedArea()
         {
-            Array.Copy(gameField, gameFieldsOnLastTurn, gameField.Length);
-            deletedSelectedArea.Clear();
+            CopyArray(gameField, gameFieldsOnLastTurn);
 
             foreach (var cell in gameField)
                 if (selectedArea.Contains(cell))
-                {
-                    deletedSelectedArea.Add(cell);
-                    cell.SetHasBallFalse();
-                }
+                    cell.HasBall = false;
 
             selectedArea.Clear();
             score += selectedAreaPointsCount;
+
+            ShiftGameField();
         }
 
         private void AddCellToSelectArea(int x, int y)
@@ -118,18 +119,16 @@ namespace Ball_Breaker
 
         public void Update()
         {
-            CheckFirstColumn();
+            if(IsFirstColumnEmpty())
+                AddBallToFirstColumn();
 
             switch (gamePhase)
             {
                 case GamePhase.ShiftDownFieldCell:
-                    ShiftGameField();
-
-                    if (delayOfShift >= 15)
+                    if (delayOfShift >= 1)
                     {
                         gamePhase = GamePhase.ShiftRightFieldCells;
                         shiftDirection = ShiftDirection.Right;
-
                         delayOfShift = 0;
                     }
                     else
@@ -138,10 +137,9 @@ namespace Ball_Breaker
                     break;
                 case GamePhase.ShiftRightFieldCells:
                     ShiftGameField();
-
                     gamePhase = GamePhase.ChooseSelectedArea;
                     shiftDirection = ShiftDirection.Down;
-                    isUndoLastTurn = false;
+                    canUndoLastTurn = true;
                     break;
             }
         }
@@ -242,7 +240,7 @@ namespace Ball_Breaker
             return position;
         }
 
-        private void CheckFirstColumn()
+        private bool IsFirstColumnEmpty()
         {
             int cellWithBallsCount = 0;
 
@@ -250,8 +248,7 @@ namespace Ball_Breaker
                 if (gameField[0, y].HasBall)
                     cellWithBallsCount++;
 
-            if(cellWithBallsCount == 0)
-                AddBallToLeftColumn();
+            return cellWithBallsCount == 0;
         }
 
         private void CalculateSimilarBallsAroundCell()
@@ -266,19 +263,19 @@ namespace Ball_Breaker
 
                     if (x - 1 >= 0 && gameField[x - 1, y].HasBall
                                    && gameField[x, y].BallColor == gameField[x - 1, y].BallColor)
-                        gameField[x, y].SimilarBallList.Add(SimilarBallDirection.Left);
+                        gameField[x, y].SimilarBallList.Add(Direction.Left);
 
                     if (y - 1 >= 0 && gameField[x, y - 1].HasBall
                                    && gameField[x, y].BallColor == gameField[x, y - 1].BallColor)
-                        gameField[x, y].SimilarBallList.Add(SimilarBallDirection.Top);
+                        gameField[x, y].SimilarBallList.Add(Direction.Top);
 
                     if (x + 1 < FieldWidth && gameField[x + 1, y].HasBall
                                            && gameField[x, y].BallColor == gameField[x + 1, y].BallColor)
-                        gameField[x, y].SimilarBallList.Add(SimilarBallDirection.Right);
+                        gameField[x, y].SimilarBallList.Add(Direction.Right);
 
                     if (y + 1 < FieldHeight && gameField[x, y + 1].HasBall
                                             && gameField[x, y].BallColor == gameField[x, y + 1].BallColor)
-                        gameField[x, y].SimilarBallList.Add(SimilarBallDirection.Bottom);
+                        gameField[x, y].SimilarBallList.Add(Direction.Bottom);
                 }
         }
 
@@ -290,7 +287,7 @@ namespace Ball_Breaker
                 Defeat();
         }
 
-        private void AddBallToLeftColumn()
+        private void AddBallToFirstColumn()
         {
             int ballsCount = CellState.Random.Next(1, FieldHeight);
 
@@ -302,20 +299,21 @@ namespace Ball_Breaker
 
         public void UndoDeleteSelectedArea()
         {
-            Array.Copy(gameFieldsOnLastTurn, gameField, gameField.Length);
-
-            foreach (var cell in gameField)
-            {
-                if(deletedSelectedArea.Contains(cell))
-                    cell.SetHasBallTrue();
-            }
-
-            isUndoLastTurn = true;
+            CopyArray(gameFieldsOnLastTurn, gameField);
+            CalculateSimilarBallsAroundCell();
+            canUndoLastTurn = false;
         }
 
-        public bool IsUndoLastTurn()
+        public bool CanUndoLastTurn()
         {
-            return isUndoLastTurn;
+            return canUndoLastTurn;
+        }
+
+        private void CopyArray(CellState[,] sourceArray, CellState[,] destinationArray)
+        {
+            for (int x = 0; x < FieldWidth; x++)
+                for (int y = 0; y < FieldHeight; y++)
+                    destinationArray[x,y] = new CellState(sourceArray[x,y].BallColor, sourceArray[x,y].HasBall);
         }
 
         public void Draw(Graphics graphics)
@@ -348,8 +346,6 @@ namespace Ball_Breaker
 
         private void DrawSelectedArea(Graphics graphics)
         {
-            CalculateSimilarBallsAroundCell();
-
             if (selectedArea.Count <= 1)
                 return;
 
@@ -357,19 +353,19 @@ namespace Ball_Breaker
                 for (int y = 0; y < FieldHeight; y++)
                     if (selectedArea.Contains(gameField[x, y]) && gameField[x, y].HasBall)
                     {
-                        if (!gameField[x, y].SimilarBallList.Contains(SimilarBallDirection.Left))
+                        if (!gameField[x, y].SimilarBallList.Contains(Direction.Left))
                             graphics.DrawLine(selectedAreaPen, x * cellSize, y * cellSize,
                                 x * cellSize, (y + 1) * cellSize);
 
-                        if (!gameField[x, y].SimilarBallList.Contains(SimilarBallDirection.Top))
+                        if (!gameField[x, y].SimilarBallList.Contains(Direction.Top))
                             graphics.DrawLine(selectedAreaPen, x * cellSize, y * cellSize
                                 , (x + 1) * cellSize, y * cellSize);
 
-                        if (!gameField[x, y].SimilarBallList.Contains(SimilarBallDirection.Right))
+                        if (!gameField[x, y].SimilarBallList.Contains(Direction.Right))
                             graphics.DrawLine(selectedAreaPen, (x + 1) * cellSize, y * cellSize,
                                 (x + 1) * cellSize, (y + 1) * cellSize);
 
-                        if (!gameField[x, y].SimilarBallList.Contains(SimilarBallDirection.Bottom))
+                        if (!gameField[x, y].SimilarBallList.Contains(Direction.Bottom))
                             graphics.DrawLine(selectedAreaPen, x * cellSize, (y + 1) * cellSize,
                                 (x + 1) * cellSize, (y + 1) * cellSize);
                     }

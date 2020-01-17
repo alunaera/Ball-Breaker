@@ -45,7 +45,7 @@
             this.gameField.Size = new System.Drawing.Size(583, 571);
             this.gameField.TabIndex = 0;
             this.gameField.TabStop = false;
-            this.gameField.MouseClick += new System.Windows.Forms.MouseEventHandler(this.ClickMouse);
+            this.gameField.MouseDown += new System.Windows.Forms.MouseEventHandler(this.DownMouse);
             // 
             // menuStrip
             // 
@@ -76,7 +76,6 @@
             // Timer
             // 
             this.Timer.Enabled = true;
-            this.Timer.Interval = 10;
             this.Timer.Tick += new System.EventHandler(this.TickTimer);
             // 
             // MainForm

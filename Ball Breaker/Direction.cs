@@ -1,6 +1,6 @@
 ﻿namespace Ball_Breaker
 {
-    internal enum SimilarBallDirection
+    internal enum Direction
     {
         Left,
         Top,

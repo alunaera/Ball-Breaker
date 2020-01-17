@@ -32,20 +32,11 @@ namespace Ball_Breaker
             game.Draw(e.Graphics);
         }
 
-        private void ClickMouse(object sender, MouseEventArgs e)
-        {
-            int cellX = e.X / CellSize;
-            int cellY = e.Y / CellSize;
-
-            if (e.Button == MouseButtons.Left)
-                game.ChooseCell(cellX, cellY);
-        }
-
         private void TickTimer(object sender, System.EventArgs e)
         {
             game.Update();
             gameField.Refresh();
-            undoToolStripMenuItem.Enabled = !game.IsUndoLastTurn();
+            undoToolStripMenuItem.Enabled = game.CanUndoLastTurn();
         }
 
         private void ClickNewGame(object sender, System.EventArgs e)
@@ -57,6 +48,14 @@ namespace Ball_Breaker
         {
             game.UndoDeleteSelectedArea();
         }
-    }
 
+        private void DownMouse(object sender, MouseEventArgs e)
+        {
+            int cellX = e.X / CellSize;
+            int cellY = e.Y / CellSize;
+
+            if (e.Button == MouseButtons.Left)
+                game.ChooseCell(cellX, cellY);
+        }
+    }
 }
