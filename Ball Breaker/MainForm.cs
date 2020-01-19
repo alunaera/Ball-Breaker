@@ -17,10 +17,12 @@ namespace Ball_Breaker
 
             game.Defeat += () =>
             {
-                gameField.Refresh();
                 Timer.Enabled = false;
+                gameField.Refresh();
                 MessageBox.Show("Game over");
+                Timer.Enabled = true;
                 game.StartNewGame();
+
             };
 
             game.StartNewGame();

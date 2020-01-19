@@ -38,6 +38,7 @@ namespace Ball_Breaker
             gameFieldsOnLastTurn = new CellState[FieldWidth, FieldHeight];
             selectedArea = new List<CellState>();
 
+            gamePhase = GamePhase.StartGame;
             selectedAreaPointsCount = 0;
             delayOfShift = 0;
             score = 0;
@@ -55,7 +56,7 @@ namespace Ball_Breaker
             if (positionX < 0 || positionX >= FieldWidth ||
                 positionY < 0 || positionY >= FieldHeight ||
                 gamePhase == GamePhase.ShiftDownFieldCell ||
-                gamePhase == GamePhase.ShiftRightFieldCells) 
+                gamePhase == GamePhase.ShiftRightFieldCells)
                 return;
 
             if (gameField[positionX, positionY].HasBall)
@@ -107,7 +108,8 @@ namespace Ball_Breaker
                         Math.Abs(i) == Math.Abs(j) || selectedArea.Contains(gameField[x + i, y + j]))
                         continue;
 
-                    if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor && gameField[x + i, y + j].HasBall)
+                    if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor &&
+                        gameField[x + i, y + j].HasBall)
                     {
                         selectedArea.Add(gameField[x + i, y + j]);
                         AddCellToSelectArea(x + i, y + j);
@@ -119,9 +121,6 @@ namespace Ball_Breaker
 
         public void Update()
         {
-            if(IsFirstColumnEmpty())
-                AddBallToFirstColumn();
-
             switch (gamePhase)
             {
                 case GamePhase.ShiftDownFieldCell:
@@ -154,9 +153,17 @@ namespace Ball_Breaker
                 case ShiftDirection.Right:
                     ShiftRightGameField();
                     CalculateSimilarBallsAroundCell();
-                    CheckDefeat();
                     break;
             }
+
+            while (IsFirstColumnEmpty())
+            {
+                AddBallToFirstColumn();
+                ShiftRightGameField();
+                CalculateSimilarBallsAroundCell();
+            }
+
+            CheckDefeat();
         }
 
         private void ShiftDownGameField()
@@ -186,7 +193,7 @@ namespace Ball_Breaker
                 }
             }
         }
-        
+
         private void ShiftRightGameField()
         {
             for (int y = 0; y < gameField.GetLength(1); y++)
@@ -281,7 +288,8 @@ namespace Ball_Breaker
 
         private void CheckDefeat()
         {
-            bool isPotentialSelectedArea = gameField.Cast<CellState>().Count(cell => cell.SimilarBallList.Count > 0) > 0;
+            bool isPotentialSelectedArea =
+                gameField.Cast<CellState>().Count(cell => cell.SimilarBallList.Count > 0) > 0;
 
             if (!isPotentialSelectedArea)
                 Defeat();
@@ -299,6 +307,9 @@ namespace Ball_Breaker
 
         public void UndoDeleteSelectedArea()
         {
+            if (gamePhase == GamePhase.StartGame || gamePhase == GamePhase.ConfirmSelectedArea)
+                return;
+
             CopyArray(gameFieldsOnLastTurn, gameField);
             CalculateSimilarBallsAroundCell();
             canUndoLastTurn = false;
@@ -313,7 +324,7 @@ namespace Ball_Breaker
         {
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    destinationArray[x,y] = new CellState(sourceArray[x,y].BallColor, sourceArray[x,y].HasBall);
+                    destinationArray[x, y] = new CellState(sourceArray[x, y].BallColor, sourceArray[x, y].HasBall);
         }
 
         public void Draw(Graphics graphics)
@@ -332,7 +343,7 @@ namespace Ball_Breaker
                 {
                     graphics.DrawLine(Pens.LightGray, x * cellSize, y * cellSize,
                         FieldWidth - x * cellSize, y * cellSize);
-                    graphics.DrawLine(Pens.LightGray, x * cellSize, y * cellSize, 
+                    graphics.DrawLine(Pens.LightGray, x * cellSize, y * cellSize,
                         x * cellSize, FieldHeight - y * cellSize);
                 }
         }
