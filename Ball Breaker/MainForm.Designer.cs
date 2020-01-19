@@ -76,6 +76,7 @@
             // Timer
             // 
             this.Timer.Enabled = true;
+            this.Timer.Interval = 150;
             this.Timer.Tick += new System.EventHandler(this.TickTimer);
             // 
             // MainForm

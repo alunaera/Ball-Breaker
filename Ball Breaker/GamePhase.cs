@@ -3,9 +3,9 @@
     internal enum GamePhase
     {
         StartGame,
-        ChooseSelectedArea,
+        WaitingSelectArea,
         ConfirmSelectedArea,
-        ShiftDownFieldCell,
+        ShiftDownFieldCells,
         ShiftRightFieldCells
     }
 }

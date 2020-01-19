@@ -22,10 +22,11 @@ namespace Ball_Breaker
                 MessageBox.Show("Game over");
                 Timer.Enabled = true;
                 game.StartNewGame();
-
+                undoToolStripMenuItem.Enabled = game.CanUndoLastTurn;
             };
 
             game.StartNewGame();
+
         }
 
         private void Draw(object sender, PaintEventArgs e)
@@ -38,7 +39,7 @@ namespace Ball_Breaker
         {
             game.Update();
             gameField.Refresh();
-            undoToolStripMenuItem.Enabled = game.CanUndoLastTurn();
+            undoToolStripMenuItem.Enabled = game.CanUndoLastTurn;
         }
 
         private void ClickNewGame(object sender, System.EventArgs e)
