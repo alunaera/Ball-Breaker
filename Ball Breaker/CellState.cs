@@ -7,6 +7,7 @@ namespace Ball_Breaker
     internal class CellState
     {
         private readonly Brush brush;
+        private double ballWidth;
 
         public static readonly Random Random = new Random();
 
@@ -15,19 +16,21 @@ namespace Ball_Breaker
 
         public bool HasBall { get; set; }
 
-        public CellState()
+        public CellState(int cellSize)
         {
             BallColor = GetRandomColor();
             brush = new SolidBrush(BallColor);
             DifferentColorAdjacentBallDirections = new List<Direction>();
+            ballWidth = cellSize * 0.8;
             HasBall = true;
         }
 
-        public CellState(Color ballColor, bool hasBall)
+        public CellState(Color ballColor, int cellSize, bool hasBall)
         {
             BallColor = ballColor;
             brush = new SolidBrush(BallColor);
             DifferentColorAdjacentBallDirections = new List<Direction>();
+            ballWidth = cellSize * 0.8;
             HasBall = hasBall;
         }
 
@@ -46,14 +49,14 @@ namespace Ball_Breaker
 
         public void Draw(Graphics graphics, int cellX, int cellY, int cellSize)
         {
-            int positionX = cellX * cellSize;
-            int positionY = cellY * cellSize;
-            int offsetToCenter = cellSize / 7;
-
             if (!HasBall)
                 return;
 
-            graphics.FillEllipse(brush, positionX + offsetToCenter, positionY + offsetToCenter, 27, 27);
+            int positionX = cellX * cellSize;
+            int positionY = cellY * cellSize;
+            int offsetToCenter = cellSize / 12;
+
+            graphics.FillEllipse(brush, positionX + offsetToCenter, positionY + offsetToCenter, (float)ballWidth, (float)ballWidth);
         }
     }
 }

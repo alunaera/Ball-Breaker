@@ -2,9 +2,8 @@
 {
     internal enum GamePhase
     {
-        StartGame,
         WaitingSelectArea,
-        ConfirmSelectedArea,
+        WaitingConfirmSelectedArea,
         ShiftDownFieldCells,
         ShiftRightFieldCells
     }

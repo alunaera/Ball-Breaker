@@ -18,7 +18,7 @@ namespace Ball_Breaker
         private GamePhase gamePhase;
         private ShiftDirection shiftDirection;
         private CellState[,] gameField;
-        private CellState[,] gameFieldsOnLastTurn;
+        private CellState[,] gameFieldOnPreviousTurn;
         private List<CellState> selectedArea;
         private int delayOfShift;
         private int score;
@@ -35,17 +35,16 @@ namespace Ball_Breaker
         public void StartNewGame()
         {
             gameField = new CellState[FieldWidth, FieldHeight];
-            gameFieldsOnLastTurn = new CellState[FieldWidth, FieldHeight];
+            gameFieldOnPreviousTurn = new CellState[FieldWidth, FieldHeight];
             selectedArea = new List<CellState>();
 
-            gamePhase = GamePhase.StartGame;
             delayOfShift = 0;
             score = 0;
             CanUndoLastTurn = false;
 
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    gameField[x, y] = new CellState();
+                    gameField[x, y] = new CellState(cellSize);
 
             CalculateDifferentBallsAroundCell();
         }
@@ -73,7 +72,7 @@ namespace Ball_Breaker
                     selectedArea.Add(gameField[positionX, positionY]);
                     AddCellToSelectArea(positionX, positionY);
 
-                    gamePhase = GamePhase.ConfirmSelectedArea;
+                    gamePhase = GamePhase.WaitingConfirmSelectedArea;
                 }
             }
             else
@@ -85,7 +84,7 @@ namespace Ball_Breaker
 
         private void DeleteSelectedArea()
         {
-            CopyArray(gameField, gameFieldsOnLastTurn);
+            CopyArray(gameField, gameFieldOnPreviousTurn);
 
             foreach (var cell in selectedArea)
                 cell.HasBall = false;
@@ -282,7 +281,7 @@ namespace Ball_Breaker
         private void CheckDefeat()
         {
             bool isPotentialSelectedArea =
-                gameField.Cast<CellState>().Count(cell => cell.DifferentColorAdjacentBallDirections.Count > 0) > 0;
+                gameField.Cast<CellState>().Count(cell => cell.DifferentColorAdjacentBallDirections.Count < 4 && cell.HasBall) > 0;
 
             if (!isPotentialSelectedArea)
                 Defeat();
@@ -293,17 +292,17 @@ namespace Ball_Breaker
             int ballsCount = CellState.Random.Next(1, FieldHeight);
 
             for (int y = 0; y <= ballsCount; y++)
-                gameField[0, FieldHeight - y - 1] = new CellState();
+                gameField[0, FieldHeight - y - 1] = new CellState(cellSize);
 
-            gamePhase = GamePhase.ShiftDownFieldCells;
+            gamePhase = GamePhase.ShiftRightFieldCells;
         }
 
         public void UndoDeleteSelectedArea()
         {
-            if(gamePhase == GamePhase.StartGame)
+            if(!CanUndoLastTurn)
                 return;
 
-            CopyArray(gameFieldsOnLastTurn, gameField);
+            CopyArray(gameFieldOnPreviousTurn, gameField);
             CalculateDifferentBallsAroundCell();
             selectedArea.Clear();
             CanUndoLastTurn = false;
@@ -313,7 +312,8 @@ namespace Ball_Breaker
         {
             for (int x = 0; x < FieldWidth; x++)
                 for (int y = 0; y < FieldHeight; y++)
-                    destinationArray[x, y] = new CellState(sourceArray[x, y].BallColor, sourceArray[x, y].HasBall);
+                    destinationArray[x, y] =
+                        new CellState(sourceArray[x, y].BallColor, cellSize, sourceArray[x, y].HasBall);
         }
 
         public void Draw(Graphics graphics)
@@ -381,34 +381,41 @@ namespace Ball_Breaker
         {
             int selectedAreaPointsCount = selectedArea.Count * (selectedArea.Count - 1);
 
-            if (selectedAreaPointsCount <= 0 || gamePhase != GamePhase.ConfirmSelectedArea)
+            if (selectedAreaPointsCount <= 0 || gamePhase != GamePhase.WaitingConfirmSelectedArea)
                 return;
 
-            int positionX = 0;
-            int positionY = 0;
+            Point GetCountPosition()
+            {
+                int positionX = 0;
+                int positionY = 0;
 
-            for (int y = 0; y < FieldHeight; y++)
-                for (int x = 0; x < FieldWidth; x++)
-                {
-                    if (!selectedArea.Contains(gameField[x, y]) || !gameField[x, y].HasBall)
-                        continue;
+                for (int y = 0; y < FieldHeight; y++)
+                    for (int x = 0; x < FieldWidth; x++)
+                    {
+                        if (!selectedArea.Contains(gameField[x, y]) || !gameField[x, y].HasBall)
+                            continue;
 
-                    positionX = x * cellSize;
-                    positionY = y * cellSize;
+                        positionX = x * cellSize;
+                        positionY = y * cellSize;
 
-                    x = FieldWidth;
-                    y = FieldHeight;
-                }
+                        x = FieldWidth;
+                        y = FieldHeight;
+                    }
 
-            if (positionX - 15 >= 0)
-                positionX -= 15;
+                if (positionX - 15 >= 0)
+                    positionX -= 15;
 
-            if (positionY - 15 >= 0)
-                positionY -= 15;
+                if (positionY - 15 >= 0)
+                    positionY -= 15;
 
-            graphics.FillEllipse(Brushes.LightGreen, positionX, positionY, 30, 25);
+                return new Point(positionX, positionY);
+            }
+
+            Point pointsCountPosition = GetCountPosition();
+
+            graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
             graphics.DrawString(selectedAreaPointsCount.ToString(), pointCountFont, Brushes.Black,
-                positionX + 5, positionY + 5);
+                pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
         }
 
         private void DrawScore(Graphics graphics)
