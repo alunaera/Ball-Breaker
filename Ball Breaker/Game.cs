@@ -142,7 +142,7 @@ namespace Ball_Breaker
 
                     break;
                 case GamePhase.AddBallToEmptyColumns:
-                    AddBallToFirstColumn(GetEmptyFirstColumnCount());
+                    AddBallToEmptyColumns(GetEmptyFirstColumnCount());
                     gamePhase = GamePhase.ShiftDownFieldCells;
                     shiftDirection = ShiftDirection.Down;
                     break;
@@ -306,7 +306,7 @@ namespace Ball_Breaker
                 Defeat();
         }
 
-        private void AddBallToFirstColumn(int columnCount)
+        private void AddBallToEmptyColumns(int columnCount)
         {
             int ballsCount = CellState.Random.Next(1, FieldHeight);
 
