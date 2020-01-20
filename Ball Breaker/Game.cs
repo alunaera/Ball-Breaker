@@ -130,9 +130,21 @@ namespace Ball_Breaker
                     break;
                 case GamePhase.ShiftRightFieldCells:
                     ShiftGameField();
-                    gamePhase = GamePhase.WaitingSelectArea;
+
+                    if (GetEmptyFirstColumnCount() == 0)
+                    {
+                        gamePhase = GamePhase.WaitingSelectArea;
+                        shiftDirection = ShiftDirection.Down;
+                        CanUndoLastTurn = true;
+                    }
+                    else
+                        gamePhase = GamePhase.AddBallToEmptyColumns;
+
+                    break;
+                case GamePhase.AddBallToEmptyColumns:
+                    AddBallToFirstColumn(GetEmptyFirstColumnCount());
+                    gamePhase = GamePhase.ShiftDownFieldCells;
                     shiftDirection = ShiftDirection.Down;
-                    CanUndoLastTurn = true;
                     break;
             }
         }
@@ -147,17 +159,9 @@ namespace Ball_Breaker
                 case ShiftDirection.Right:
                     ShiftRightGameField();
                     CalculateDifferentBallsAroundCell();
+                    CheckDefeat();
                     break;
             }
-
-            while (IsFirstColumnEmpty())
-            {
-                AddBallToFirstColumn();
-                ShiftRightGameField();
-                CalculateDifferentBallsAroundCell();
-            }
-
-            CheckDefeat();
         }
 
         private void ShiftDownGameField()
@@ -241,13 +245,23 @@ namespace Ball_Breaker
             return position;
         }
 
-        private bool IsFirstColumnEmpty()
+        private int GetEmptyFirstColumnCount()
         {
-            for (int y = 0; y < FieldHeight; y++)
-                if (gameField[0, y].HasBall)
-                    return false;
+            int emptyColumnCount = 0;
 
-            return true;
+            for (int x = 0; x < FieldWidth; x++)
+            {
+                int emptyCellCount = 0;
+
+                for (int y = 0; y < FieldHeight; y++)
+                    if (!gameField[x, y].HasBall)
+                        emptyCellCount++;
+
+                if (emptyCellCount == FieldHeight)
+                    emptyColumnCount++;
+            }
+
+            return emptyColumnCount;
         }
 
         private void CalculateDifferentBallsAroundCell()
@@ -260,20 +274,24 @@ namespace Ball_Breaker
                     if (!gameField[x, y].HasBall)
                         continue;
 
-                    if (x == 0 || 
-                        x - 1 >= 0 && (!gameField[x - 1, y].HasBall || gameField[x, y].BallColor != gameField[x - 1, y].BallColor))
+                    if (x == 0 ||
+                        x - 1 >= 0 && (!gameField[x - 1, y].HasBall ||
+                                       gameField[x, y].BallColor != gameField[x - 1, y].BallColor))
                         gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Left);
 
                     if (y == 0 ||
-                        y - 1 >= 0 && (!gameField[x, y - 1].HasBall  || gameField[x, y].BallColor != gameField[x, y - 1].BallColor))
+                        y - 1 >= 0 && (!gameField[x, y - 1].HasBall ||
+                                       gameField[x, y].BallColor != gameField[x, y - 1].BallColor))
                         gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Top);
 
                     if (x == FieldWidth - 1 ||
-                        x + 1 < FieldWidth && (!gameField[x + 1, y].HasBall || gameField[x, y].BallColor != gameField[x + 1, y].BallColor))
+                        x + 1 < FieldWidth && (!gameField[x + 1, y].HasBall ||
+                                               gameField[x, y].BallColor != gameField[x + 1, y].BallColor))
                         gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Right);
 
                     if (y == FieldHeight - 1 ||
-                        y + 1 < FieldHeight && (!gameField[x, y + 1].HasBall || gameField[x, y].BallColor != gameField[x, y + 1].BallColor))
+                        y + 1 < FieldHeight && (!gameField[x, y + 1].HasBall ||
+                                                gameField[x, y].BallColor != gameField[x, y + 1].BallColor))
                         gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Bottom);
                 }
         }
@@ -281,25 +299,27 @@ namespace Ball_Breaker
         private void CheckDefeat()
         {
             bool isPotentialSelectedArea =
-                gameField.Cast<CellState>().Count(cell => cell.DifferentColorAdjacentBallDirections.Count < 4 && cell.HasBall) > 0;
+                gameField.Cast<CellState>()
+                    .Count(cell => cell.DifferentColorAdjacentBallDirections.Count < 4 && cell.HasBall) > 0;
 
             if (!isPotentialSelectedArea)
                 Defeat();
         }
 
-        private void AddBallToFirstColumn()
+        private void AddBallToFirstColumn(int columnCount)
         {
             int ballsCount = CellState.Random.Next(1, FieldHeight);
 
-            for (int y = 0; y <= ballsCount; y++)
-                gameField[0, FieldHeight - y - 1] = new CellState(cellSize);
+            for (int i = 0; i < columnCount; i++)
+                for (int y = 0; y <= ballsCount; y++)
+                    gameField[i, FieldHeight - y - 1] = new CellState(cellSize);
 
             gamePhase = GamePhase.ShiftRightFieldCells;
         }
 
         public void UndoDeleteSelectedArea()
         {
-            if(!CanUndoLastTurn)
+            if (!CanUndoLastTurn)
                 return;
 
             CopyArray(gameFieldOnPreviousTurn, gameField);
@@ -353,7 +373,7 @@ namespace Ball_Breaker
                 for (int y = 0; y < FieldHeight; y++)
                     if (gameField[x, y].HasBall && selectedArea.Contains(gameField[x, y]))
                     {
-                        foreach(var direction in gameField[x,y].DifferentColorAdjacentBallDirections)
+                        foreach (var direction in gameField[x, y].DifferentColorAdjacentBallDirections)
                             switch (direction)
                             {
                                 case Direction.Left:
@@ -384,38 +404,31 @@ namespace Ball_Breaker
             if (selectedAreaPointsCount <= 0 || gamePhase != GamePhase.WaitingConfirmSelectedArea)
                 return;
 
+            Point pointsCountPosition = GetCountPosition();
+
+            if (pointsCountPosition.X - 15 >= 0)
+                pointsCountPosition.X -= 15;
+
+            if (pointsCountPosition.Y - 15 >= 0)
+                pointsCountPosition.Y -= 15;
+
+            graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
+            graphics.DrawString(selectedAreaPointsCount.ToString(), pointCountFont, Brushes.Black,
+                pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
+
             Point GetCountPosition()
             {
-                int positionX = 0;
-                int positionY = 0;
-
                 for (int y = 0; y < FieldHeight; y++)
                     for (int x = 0; x < FieldWidth; x++)
                     {
                         if (!selectedArea.Contains(gameField[x, y]) || !gameField[x, y].HasBall)
                             continue;
 
-                        positionX = x * cellSize;
-                        positionY = y * cellSize;
-
-                        x = FieldWidth;
-                        y = FieldHeight;
+                        return new Point(x * cellSize, y * cellSize);
                     }
 
-                if (positionX - 15 >= 0)
-                    positionX -= 15;
-
-                if (positionY - 15 >= 0)
-                    positionY -= 15;
-
-                return new Point(positionX, positionY);
+                return new Point(0, 0);
             }
-
-            Point pointsCountPosition = GetCountPosition();
-
-            graphics.FillEllipse(Brushes.LightGreen, pointsCountPosition.X, pointsCountPosition.Y, 30, 25);
-            graphics.DrawString(selectedAreaPointsCount.ToString(), pointCountFont, Brushes.Black,
-                pointsCountPosition.X + 5, pointsCountPosition.Y + 5);
         }
 
         private void DrawScore(Graphics graphics)

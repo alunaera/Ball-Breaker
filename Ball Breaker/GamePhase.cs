@@ -5,6 +5,7 @@
         WaitingSelectArea,
         WaitingConfirmSelectedArea,
         ShiftDownFieldCells,
-        ShiftRightFieldCells
+        ShiftRightFieldCells,
+        AddBallToEmptyColumns
     }
 }
