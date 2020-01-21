@@ -22,7 +22,6 @@ namespace Ball_Breaker
                 MessageBox.Show("Game over");
                 Timer.Enabled = true;
                 game.StartNewGame();
-                undoToolStripMenuItem.Enabled = game.CanUndoLastTurn;
             };
 
             game.StartNewGame();

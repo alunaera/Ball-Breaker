@@ -16,15 +16,6 @@ namespace Ball_Breaker
 
         public bool HasBall { get; set; }
 
-        public CellState(int cellSize)
-        {
-            BallColor = GetRandomColor();
-            brush = new SolidBrush(BallColor);
-            DifferentColorAdjacentBallDirections = new List<Direction>();
-            ballWidth = cellSize;
-            HasBall = true;
-        }
-
         public CellState(Color ballColor, int cellSize, bool hasBall)
         {
             BallColor = ballColor;
@@ -34,7 +25,13 @@ namespace Ball_Breaker
             HasBall = hasBall;
         }
 
-        private Color GetRandomColor()
+        public CellState(int cellSize) :
+            this(GetRandomColor(), cellSize, hasBall: true)
+        {
+        }
+     
+
+        private static Color GetRandomColor()
         {
             switch (Random.Next(0, 5))
             {
