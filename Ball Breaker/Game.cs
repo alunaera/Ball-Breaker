@@ -311,7 +311,8 @@ namespace Ball_Breaker
             for (int i = 0; i < columnCount; i++)
                 for (int y = 0; y <= ballsCount; y++)
                     gameField[i, FieldHeight - y - 1] = new CellState(cellSize);
-                
+
+            CalculateDifferentBallsAroundCell();
             gamePhase = GamePhase.ShiftDownFieldCells;
         }
 
