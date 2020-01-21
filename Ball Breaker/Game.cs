@@ -153,12 +153,12 @@ namespace Ball_Breaker
                         gamePhase = GamePhase.WaitingSelectArea;
                         CanUndoLastTurn = true;
 
+                        CalculateDifferentBallsAroundCell();
                         CheckDefeat();
                     }
                     else
                         gamePhase = GamePhase.AddBallToEmptyColumns;
 
-                    CalculateDifferentBallsAroundCell();
                     break;
             }
         }
@@ -312,7 +312,6 @@ namespace Ball_Breaker
                 for (int y = 0; y <= ballsCount; y++)
                     gameField[i, FieldHeight - y - 1] = new CellState(cellSize);
 
-            CalculateDifferentBallsAroundCell();
             gamePhase = GamePhase.ShiftDownFieldCells;
         }
 
