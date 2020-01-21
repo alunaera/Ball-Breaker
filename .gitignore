@@ -1,18 +1,5 @@
-Ball Breaker/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
-Ball Breaker/obj/Debug/DesignTimeResolveAssemblyReferences.cache
-Ball Breaker/obj/Debug/Ball_Breaker.Properties.Resources.resources
-Ball Breaker/obj/Debug/Ball_Breaker.MainForm.resources
-Ball Breaker/obj/Debug/Ball Breaker.pdb
-Ball Breaker/obj/Debug/Ball Breaker.exe
-Ball Breaker/obj/Debug/Ball Breaker.csprojAssemblyReference.cache
-Ball Breaker/obj/Debug/Ball Breaker.csproj.GenerateResource.cache
-Ball Breaker/obj/Debug/Ball Breaker.csproj.FileListAbsolute.txtBall Breaker/bin/Debug/Ball Breaker.pdb
-Ball Breaker/bin/Debug/Ball Breaker.exe.config
-Ball Breaker/bin/Debug/Ball Breaker.exeBall Breaker/bin/Debug/Ball Breaker.pdb
-Ball Breaker/.vs/Ball Breaker/v16/Server/sqlite3/storage.ide-wal
-Ball Breaker/.vs/Ball Breaker/v16/Server/sqlite3/storage.ide-shm
-Ball Breaker/.vs/Ball Breaker/v16/Server/sqlite3/storage.ide
-Ball Breaker/.vs/Ball Breaker/v16/.suoBall Breaker/obj/Debug/Ball Breaker.csproj.FileListAbsolute.txtBall Breaker/bin/Debug/Ball Breaker.pdbBall Breaker/bin/Debug/Ball Breaker.exeBall Breaker/.vs/Ball Breaker/v16/.suo
+Ball Breaker/obj/Debug/**
+Ball Breaker/.vs/**
 Ball Breaker/bin/Debug/Ball Breaker.exe
 Ball Breaker/bin/Debug/Ball Breaker.pdb
-Ball Breaker/obj/Debug/Ball Breaker.csproj.FileListAbsolute.txt
+Ball Breaker/obj/Debug/Ball Breaker.csproj.FileListAbsolute.txtBall Breaker/bin/Debug/Ball Breaker.exe.configBall Breaker/bin/Debug/Ball Breaker.exe.config
