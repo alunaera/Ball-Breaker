@@ -54,32 +54,33 @@ namespace Ball_Breaker
                 positionY < 0 || positionY >= FieldHeight)
                 return;
 
-            if(gamePhase == GamePhase.ShiftDownFieldCells ||
-               gamePhase == GamePhase.ShiftRightFieldCells)
-                return;
+            CellState choosenCell = gameField[positionX, positionY];
 
-            if (gameField[positionX, positionY].HasBall)
+            if (gamePhase == GamePhase.WaitingSelectArea)
             {
-                if (selectedArea.Count > 1 && selectedArea.Contains(gameField[positionX, positionY]))
-                {
-                    gamePhase = GamePhase.ShiftDownFieldCells;
-                    DeleteSelectedArea();
-                }
+                if(!choosenCell.HasBall)
+                    return;
 
-                else if (gamePhase != GamePhase.ShiftDownFieldCells)
+                selectedArea = GetSimilarColorArea(positionX, positionY);
+
+                if (selectedArea.Count >= 2)
+                    gamePhase = GamePhase.WaitingConfirmSelectedArea;
+
+                return;
+            }
+
+            if (gamePhase == GamePhase.WaitingConfirmSelectedArea)
+            {
+                if (!choosenCell.HasBall
+                    || !selectedArea.Contains(choosenCell))
                 {
                     selectedArea.Clear();
-
-                    selectedArea.Add(gameField[positionX, positionY]);
-                    AddCellToSelectArea(positionX, positionY);
-
-                    gamePhase = GamePhase.WaitingConfirmSelectedArea;
+                    gamePhase = GamePhase.WaitingSelectArea;
+                    return;
                 }
-            }
-            else
-            {
-                selectedArea.Clear();
-                gamePhase = GamePhase.WaitingSelectArea;
+
+                gamePhase = GamePhase.ShiftDownFieldCells;
+                DeleteSelectedArea();
             }
         }
 
@@ -95,22 +96,32 @@ namespace Ball_Breaker
             selectedArea.Clear();
         }
 
-        private void AddCellToSelectArea(int x, int y)
+        private List<CellState> GetSimilarColorArea(int positionX, int positionY)
         {
-            for (int i = -1; i <= 1; i++)
-                for (int j = -1; j <= 1; j++)
-                {
-                    if (x + i < 0 || x + i >= FieldWidth || y + j < 0 || y + j >= FieldHeight ||
-                        Math.Abs(i) == Math.Abs(j) || selectedArea.Contains(gameField[x + i, y + j]))
-                        continue;
+            List<CellState> similarColorArea = new List<CellState>();
 
-                    if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor &&
-                        gameField[x + i, y + j].HasBall)
+            similarColorArea.Add(gameField[positionX, positionY]);
+            AddCellToSimilarColorArea(positionX, positionY);
+
+            return similarColorArea;
+
+            void AddCellToSimilarColorArea(int x, int y)
+            {
+                for (int i = -1; i <= 1; i++)
+                    for (int j = -1; j <= 1; j++)
                     {
-                        selectedArea.Add(gameField[x + i, y + j]);
-                        AddCellToSelectArea(x + i, y + j);
+                        if (x + i < 0 || x + i >= FieldWidth || y + j < 0 || y + j >= FieldHeight ||
+                            Math.Abs(i) == Math.Abs(j) || similarColorArea.Contains(gameField[x + i, y + j]))
+                            continue;
+
+                        if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor &&
+                            gameField[x + i, y + j].HasBall)
+                        {
+                            similarColorArea.Add(gameField[x + i, y + j]);
+                            AddCellToSimilarColorArea(x + i, y + j);
+                        }
                     }
-                }
+            }
         }
 
         public void Update()
@@ -121,8 +132,8 @@ namespace Ball_Breaker
 
                     if (delayOfShift >= 1)
                     {
-                        ShiftGameField();
                         delayOfShift = 0;
+                        ShiftGameField();
                     }
                     else
                         delayOfShift++;
