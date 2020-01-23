@@ -98,29 +98,36 @@ namespace Ball_Breaker
 
         private List<CellState> GetSimilarColorArea(int positionX, int positionY)
         {
-            List<CellState> similarColorArea = new List<CellState>();
+            return AddCellToSimilarColorArea(positionX, positionY, new List<CellState>());
 
-            similarColorArea.Add(gameField[positionX, positionY]);
-            AddCellToSimilarColorArea(positionX, positionY);
-
-            return similarColorArea;
-
-            void AddCellToSimilarColorArea(int x, int y)
+            List<CellState> AddCellToSimilarColorArea(int x, int y, List<CellState> accumulatedSimilarColorArea)
             {
+                accumulatedSimilarColorArea.Add(gameField[x, y]);
+
                 for (int i = -1; i <= 1; i++)
                     for (int j = -1; j <= 1; j++)
                     {
-                        if (x + i < 0 || x + i >= FieldWidth || y + j < 0 || y + j >= FieldHeight ||
-                            Math.Abs(i) == Math.Abs(j) || similarColorArea.Contains(gameField[x + i, y + j]))
+                        if (x + i < 0 || x + i >= FieldWidth ||
+                            y + j < 0 || y + j >= FieldHeight)
                             continue;
 
-                        if (gameField[x, y].BallColor == gameField[x + i, y + j].BallColor &&
-                            gameField[x + i, y + j].HasBall)
-                        {
-                            similarColorArea.Add(gameField[x + i, y + j]);
-                            AddCellToSimilarColorArea(x + i, y + j);
-                        }
+                        // Ignore diagonals and the same cell
+                        if (Math.Abs(i) == Math.Abs(j))
+                            continue;
+
+                        if (!gameField[x + i, y + j].HasBall)
+                            continue;
+
+                        if (gameField[x, y].BallColor != gameField[x + i, y + j].BallColor)
+                            continue;
+
+                        if (accumulatedSimilarColorArea.Contains(gameField[x + i, y + j]))
+                            continue;
+
+                        AddCellToSimilarColorArea(x + i, y + j, accumulatedSimilarColorArea);
                     }
+
+                return accumulatedSimilarColorArea;
             }
         }
 
@@ -133,43 +140,17 @@ namespace Ball_Breaker
                     if (delayOfShift >= 1)
                     {
                         delayOfShift = 0;
-                        ShiftGameField();
+                        ShiftDownGameField();
                     }
                     else
                         delayOfShift++;
 
                     break;
                 case GamePhase.ShiftRightFieldCells:
-                    ShiftGameField();
+                    ShiftRightGameField();
                     break;
                 case GamePhase.AddBallToEmptyColumns:
                     AddBallToEmptyColumns(GetEmptyFirstColumnCount());
-                    break;
-            }
-        }
-
-        private void ShiftGameField()
-        {
-            switch (gamePhase)
-            {
-                case GamePhase.ShiftDownFieldCells:
-                    ShiftDownGameField();
-                    gamePhase = GamePhase.ShiftRightFieldCells;
-                    break;
-                case GamePhase.ShiftRightFieldCells:
-                    ShiftRightGameField();
-
-                    if (GetEmptyFirstColumnCount() == 0)
-                    {
-                        gamePhase = GamePhase.WaitingSelectArea;
-                        CanUndoLastTurn = true;
-
-                        CalculateDifferentBallsAroundCell();
-                        CheckDefeat();
-                    }
-                    else
-                        gamePhase = GamePhase.AddBallToEmptyColumns;
-
                     break;
             }
         }
@@ -200,6 +181,8 @@ namespace Ball_Breaker
                     }
                 }
             }
+
+            gamePhase = GamePhase.ShiftRightFieldCells;
         }
 
         private void ShiftRightGameField()
@@ -228,6 +211,17 @@ namespace Ball_Breaker
                     }
                 }
             }
+
+            if (GetEmptyFirstColumnCount() == 0)
+            {
+                gamePhase = GamePhase.WaitingSelectArea;
+                CanUndoLastTurn = true;
+
+                CalculateDifferentBallsAroundCell();
+                CheckDefeat();
+            }
+            else
+                gamePhase = GamePhase.AddBallToEmptyColumns;
         }
 
         private int GetCellWithOutBallPosition(int numberPartOfArray)
@@ -317,11 +311,13 @@ namespace Ball_Breaker
 
         private void AddBallToEmptyColumns(int columnCount)
         {
-            int ballsCount = CellState.Random.Next(1, FieldHeight);
-
             for (int i = 0; i < columnCount; i++)
+            {
+                int ballsCount = CellState.Random.Next(1, FieldHeight);
+
                 for (int y = 0; y <= ballsCount; y++)
                     gameField[i, FieldHeight - y - 1] = new CellState(cellSize);
+            }
 
             gamePhase = GamePhase.ShiftDownFieldCells;
         }
