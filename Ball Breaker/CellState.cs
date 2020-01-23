@@ -12,7 +12,7 @@ namespace Ball_Breaker
         public static readonly Random Random = new Random();
 
         public readonly Color BallColor;
-        public readonly List<Direction> DifferentColorAdjacentBallDirections;
+        public readonly List<Point> DifferentColorAdjacentBallDirections;
 
         public bool HasBall { get; set; }
 
@@ -20,7 +20,7 @@ namespace Ball_Breaker
         {
             BallColor = ballColor;
             brush = new SolidBrush(BallColor);
-            DifferentColorAdjacentBallDirections = new List<Direction>();
+            DifferentColorAdjacentBallDirections = new List<Point>();
             ballWidth = cellSize;
             HasBall = hasBall;
         }

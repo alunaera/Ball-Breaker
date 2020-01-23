@@ -10,6 +10,7 @@ namespace Ball_Breaker
         private const int FieldWidth = 12;
         private const int FieldHeight = 12;
 
+        private readonly Point[] directions = { new Point(0, -1), new Point(0, 1), new Point(-1, 0), new Point(1, 0) };
         private readonly Font pointCountFont = new Font("Arial", 10);
         private readonly Font scoreFont = new Font("Arial", 15);
         private readonly Pen selectedAreaPen = new Pen(Color.Black, 3);
@@ -104,28 +105,24 @@ namespace Ball_Breaker
             {
                 accumulatedSimilarColorArea.Add(gameField[x, y]);
 
-                for (int i = -1; i <= 1; i++)
-                    for (int j = -1; j <= 1; j++)
-                    {
-                        if (x + i < 0 || x + i >= FieldWidth ||
-                            y + j < 0 || y + j >= FieldHeight)
-                            continue;
+                foreach (Point direction in directions)
+                {
+                    if (x + direction.X < 0 || x + direction.X >= FieldWidth ||
+                        y + direction.Y < 0 || y + direction.Y >= FieldHeight)
+                        continue;
 
-                        // Ignore diagonals and the same cell
-                        if (Math.Abs(i) == Math.Abs(j))
-                            continue;
 
-                        if (!gameField[x + i, y + j].HasBall)
-                            continue;
+                    if (!gameField[x + direction.X, y + direction.Y].HasBall)
+                        continue;
 
-                        if (gameField[x, y].BallColor != gameField[x + i, y + j].BallColor)
-                            continue;
+                    if (gameField[x, y].BallColor != gameField[x + direction.X, y + direction.Y].BallColor)
+                        continue;
 
-                        if (accumulatedSimilarColorArea.Contains(gameField[x + i, y + j]))
-                            continue;
+                    if (accumulatedSimilarColorArea.Contains(gameField[x + direction.X, y + direction.Y]))
+                        continue;
 
-                        AddCellToSimilarColorArea(x + i, y + j, accumulatedSimilarColorArea);
-                    }
+                    AddCellToSimilarColorArea(x + direction.X, y + direction.Y, accumulatedSimilarColorArea);
+                }
 
                 return accumulatedSimilarColorArea;
             }
@@ -278,25 +275,17 @@ namespace Ball_Breaker
                     if (!gameField[x, y].HasBall)
                         continue;
 
-                    if (x == 0 ||
-                        x - 1 >= 0 && (!gameField[x - 1, y].HasBall ||
-                                       gameField[x, y].BallColor != gameField[x - 1, y].BallColor))
-                        gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Left);
 
-                    if (y == 0 ||
-                        y - 1 >= 0 && (!gameField[x, y - 1].HasBall ||
-                                       gameField[x, y].BallColor != gameField[x, y - 1].BallColor))
-                        gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Top);
+                    foreach (Point direction in directions)
+                    {
+                        Point nearPoint = new Point(x + direction.X, y + direction.Y);
 
-                    if (x == FieldWidth - 1 ||
-                        x + 1 < FieldWidth && (!gameField[x + 1, y].HasBall ||
-                                               gameField[x, y].BallColor != gameField[x + 1, y].BallColor))
-                        gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Right);
-
-                    if (y == FieldHeight - 1 ||
-                        y + 1 < FieldHeight && (!gameField[x, y + 1].HasBall ||
-                                                gameField[x, y].BallColor != gameField[x, y + 1].BallColor))
-                        gameField[x, y].DifferentColorAdjacentBallDirections.Add(Direction.Bottom);
+                        if (nearPoint.X < 0 || nearPoint.X >= FieldWidth ||
+                            nearPoint.Y < 0 || nearPoint.Y >= FieldHeight ||
+                            !gameField[nearPoint.X, nearPoint.Y].HasBall ||
+                            gameField[x, y].BallColor != gameField[nearPoint.X, nearPoint.Y].BallColor)
+                            gameField[x, y].DifferentColorAdjacentBallDirections.Add(direction);
+                    }
                 }
         }
 
@@ -379,25 +368,15 @@ namespace Ball_Breaker
                     if (gameField[x, y].HasBall && selectedArea.Contains(gameField[x, y]))
                     {
                         foreach (var direction in gameField[x, y].DifferentColorAdjacentBallDirections)
-                            switch (direction)
-                            {
-                                case Direction.Left:
-                                    graphics.DrawLine(selectedAreaPen, x * cellSize, y * cellSize,
-                                        x * cellSize, (y + 1) * cellSize);
-                                    break;
-                                case Direction.Top:
-                                    graphics.DrawLine(selectedAreaPen, x * cellSize, y * cellSize,
-                                        (x + 1) * cellSize, y * cellSize);
-                                    break;
-                                case Direction.Right:
-                                    graphics.DrawLine(selectedAreaPen, (x + 1) * cellSize, y * cellSize,
-                                        (x + 1) * cellSize, (y + 1) * cellSize);
-                                    break;
-                                case Direction.Bottom:
-                                    graphics.DrawLine(selectedAreaPen, x * cellSize, (y + 1) * cellSize,
-                                        (x + 1) * cellSize, (y + 1) * cellSize);
-                                    break;
-                            }
+                        {
+                            if (direction.X < 0 || direction.Y < 0)
+                                graphics.DrawLine(selectedAreaPen, x * cellSize, y * cellSize,
+                                    (x - direction.Y) * cellSize, (y - direction.X) * cellSize);
+
+                            if( direction.X > 0 || direction.Y > 0)
+                                graphics.DrawLine(selectedAreaPen, (x + 1) * cellSize, (y + 1) * cellSize,
+                                    (x + 1 - direction.Y) * cellSize, (y + 1 - direction.X) * cellSize);
+                        }
                     }
 
         }
