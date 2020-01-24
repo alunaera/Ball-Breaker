@@ -22,6 +22,7 @@ namespace Ball_Breaker
         private List<CellState> selectedArea;
         private int delayOfShift;
         private int score;
+        private int deletedAreaCount;
 
         public bool CanUndoLastTurn { get; private set; }
 
@@ -40,6 +41,7 @@ namespace Ball_Breaker
 
             delayOfShift = 0;
             score = 0;
+            deletedAreaCount = 0;
             CanUndoLastTurn = false;
 
             for (int x = 0; x < FieldWidth; x++)
@@ -92,7 +94,8 @@ namespace Ball_Breaker
             foreach (var cell in selectedArea)
                 cell.HasBall = false;
 
-            score += selectedArea.Count * (selectedArea.Count - 1);
+            deletedAreaCount = selectedArea.Count * (selectedArea.Count - 1);
+            score += deletedAreaCount;
 
             selectedArea.Clear();
         }
@@ -318,6 +321,7 @@ namespace Ball_Breaker
 
             CopyArray(gameFieldOnPreviousTurn, gameField);
             CalculateDifferentBallsAroundCell();
+            score -= deletedAreaCount;
             selectedArea.Clear();
             CanUndoLastTurn = false;
         }
